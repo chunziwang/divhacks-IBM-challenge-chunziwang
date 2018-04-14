@@ -1,0 +1,154 @@
+---
+title: "MNIST IBM Challenge"
+author: "Chunzi Wang"
+date: "Apr 14, 2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+```
+
+## Load in data
+```{r}
+train <- read.csv('MNIST_train.csv')
+test <- read.csv('MNIST_test.csv')
+```
+
+```{r}
+str(train)
+```
+
+## Calculate prediction accuracy and labeling EASY and HARD
+
+```{r}
+train$PC <- rowSums(train[,3:23])/21
+test$PC <- rowSums(test[,3:23])/21
+summary(train$PC)
+summary(test$PC)
+```
+
+Given that the median of both train and test set is 0.9048, I'll set the threshold to 0.9. A digit will get a "EASY" label if it has PC >= 0.9, otherwise "HARD".
+
+```{r}
+train$label <- ifelse(train$PC>=0.9,"EASY","HARD")
+test$label <- ifelse(test$PC>=0.9,"EASY","HARD")
+```
+
+## Among 0-9, find which digits are easier to predict than others.
+
+```{r}
+library(dplyr)
+library(ggplot2)
+library(ggridges)
+```
+
+```{r}
+train$Label <- as.character(train$Label)
+
+train %>%
+  group_by(Label) %>%
+  ggplot(aes(x=Label,y=PC,fill=Label))+
+  geom_boxplot() +
+  xlab("Digits") +
+  ylab("propotion of correct predictions")
+```
+
+```{r}
+train %>%
+  count(Label) #%>%
+  #ggplot(aes(x=Label,y=n,fill=n)) +
+  #geom_col()
+```
+
+Every digit has about the same number of observations. ~ 6000.
+
+```{r}
+train %>%
+  count(Label,label) %>%
+  ggplot(aes(x=Label,y=n,fill=label))+
+  geom_col() +
+  xlab("Digits") +
+  ylab("Frequency")
+```
+
++ It's noticed that 1 and 0 are the easiest to predict because the strokes of the digits are simple.
++ 6 and 7 are easy to predict as well from the simplicity of the digits.
++ 8,5,9,2,3,4 are harder to predict given they are more complicated to write and machine may misinterpret them as something else.
+
+## Binary Classifier using logistic regression and random forest
+
+### First step: change EASY and HARD label into binary. EASY -> 0, HARD -> 1.
+
+```{r}
+train$bi_label <- 0
+train[which(train$label=="HARD"),"bi_label"] <- 1
+test$bi_label <- 0
+test[which(test$label=="HARD"),"bi_label"] <- 1
+```
+
+### Second step: seperating training and validation set for cross-validation.
+
+```{r}
+train_index <- sample(1:60000,50000)
+train_sample <- train[train_index,]
+validation <- train[-train_index,]
+```
+
+```{r}
+#Logistic regression
+lr.fit <- glm(bi_label~.,data=train_sample[,c(3:23,26)])
+pred <- predict(lr.fit,validation[,3:23],type="response")
+pred <- ifelse(pred>0.4,1,0)
+conf <- table(validation$bi_label,pred)
+conf
+accuracy <- mean(pred==validation$bi_label)
+accuracy
+```
+
+When set the threshold to 0.4, accuracy is around 97% for the validation set.
+
+```{r}
+#Random forest
+library(randomForest)
+```
+
+```{r}
+rf.fit <- randomForest(as.factor(bi_label)~.,data=train_sample[,c(3:23,26)],importance=TRUE)
+pred <- predict(rf.fit,validation[,3:23])
+conf <- table(validation$bi_label,pred)
+conf
+accuracy <- mean(pred==validation$bi_label)
+accuracy
+```
+
+### Third step: calculating training and test accuracy using trained models
+
+```{r}
+#Logistic regression - training
+
+
+```
+
+```{r}
+#Random forest - training
+pred <- predict(rf.fit,train[,3:23])
+conf <- table(train$bi_label,pred)
+conf
+accuracy <- mean(pred==train$bi_label)
+accuracy
+```
+
+```{r}
+#Random forest - test
+pred <- predict(rf.fit,test[,3:23])
+conf <- table(test$bi_label,pred)
+conf
+accuracy <- mean(pred==test$bi_label)
+accuracy
+```
+
+
+
+
+
