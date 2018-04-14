@@ -11,15 +11,15 @@ csv file and ubyte data downloaded online.
 
 Summary of the proportion accurately predicted for each image:
 
-![](https://github.com/chunziwang/whole-foods-market-basket-analysis/blob/master/figs/19.jpg)
+![](https://github.com/chunziwang/divhacks-IBM-challenge-chunziwang/blob/master/figs/3.png)
 
 Given that the median of both train and test set is 0.9048, I'll set the threshold to 0.9. A digit will get a "EASY" label if it has PC >= 0.9, otherwise "HARD".
 
 ## Among 0-9, find which digits are easier to predict than others
 
-![](https://github.com/chunziwang/whole-foods-market-basket-analysis/blob/master/figs/19.jpg)
+![](https://github.com/chunziwang/divhacks-IBM-challenge-chunziwang/blob/master/figs/1.png)
 
-![](https://github.com/chunziwang/whole-foods-market-basket-analysis/blob/master/figs/19.jpg)
+![](https://github.com/chunziwang/divhacks-IBM-challenge-chunziwang/blob/master/figs/2.png)
 
 Every digit has about the same number of observations. ~ 6000.
 
