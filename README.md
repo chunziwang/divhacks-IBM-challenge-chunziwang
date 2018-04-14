@@ -35,7 +35,7 @@ Third step: calculating training and test accuracy using trained models.
 
 Prediction results:
 
-![](https://github.com/chunziwang/whole-foods-market-basket-analysis/blob/master/figs/19.jpg)
+![](https://github.com/chunziwang/divhacks-IBM-challenge-chunziwang/blob/master/figs/4.png)
 
 
 
