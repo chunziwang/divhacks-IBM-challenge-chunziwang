@@ -2,6 +2,13 @@
 # Handwriting Digits - Easy or hard? An IBM DIV HACKS Project
 
 ----
+## Problem to solve
+
+Given the MNIST data and recognition results from 21 ML algorithms (a value of 1 means that the corresponding ML algorithm has correctly recognized the digit, and a value of 0 means that the corresponding ML algorithm did not recognize the digit correctly), the hyposis is: some handwriting digits are inherently easier to recognize than others – this can be indicated by how easily a digit can be correctly predicted by those 21 ML algorithms. If a digit can be easily recognized by most ML algorithms, it is probably safe to assume that the digit is easy to recognize. If a digit can NOT be recognized correctly by most ML algorithms, it is probably safe to assume that the digit is HARD to recognize.
+
+The goal is to design a binary classifier for these handwriting digits so that we can correctly predict if a digit is easy or hard to recognize. 
+
+
 
 ## Load in data
 
