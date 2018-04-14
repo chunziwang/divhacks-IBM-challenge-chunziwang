@@ -8,7 +8,7 @@ Given the MNIST data and recognition results from 21 ML algorithms (a value of 1
 
 The goal is to design a binary classifier for these handwriting digits so that we can correctly predict if a digit is easy or hard to recognize. 
 
-
+![](https://github.com/chunziwang/divhacks-IBM-challenge-chunziwang/blob/master/figs/mnistExamples.png)
 
 ## Load in data
 
