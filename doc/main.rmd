@@ -10,13 +10,24 @@ knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
 ```
 
 ## Load in data
+
 ```{r}
-train <- read.csv('MNIST_train.csv')
-test <- read.csv('MNIST_test.csv')
+train <- read.csv('E:/GitHub/divhacks-IBM-challenge-chunziwang/data/MNIST_train.csv')
+test <- read.csv('E:/GitHub/divhacks-IBM-challenge-chunziwang/data/MNIST_test.csv')
+
+# load images
+image_train = load_image_file("E:/GitHub/divhacks-IBM-challenge-chunziwang/data/train-images-idx3-ubyte")
+image_test  = load_image_file("E:/GitHub/divhacks-IBM-challenge-chunziwang/data/t10k-images-idx3-ubyte")
+
+# load labels (tell you which digit the image represents)
+image_train$y = as.factor(load_label_file("E:/GitHub/divhacks-IBM-challenge-chunziwang/data/train-labels-idx1-ubyte"))
+image_test$y  = as.factor(load_label_file("E:/GitHub/divhacks-IBM-challenge-chunziwang/data/t10k-labels-idx1-ubyte"))
 ```
 
 ```{r}
 str(train)
+image_train[1:6,1:5]
+image_train[1:6,780:786]
 ```
 
 ## Calculate prediction accuracy and labeling EASY and HARD
@@ -33,6 +44,13 @@ Given that the median of both train and test set is 0.9048, I'll set the thresho
 ```{r}
 train$label <- ifelse(train$PC>=0.9,"EASY","HARD")
 test$label <- ifelse(test$PC>=0.9,"EASY","HARD")
+```
+
+Put the EASY and HARD column to image dataset.
+
+```{r}
+image_train$label <- train$label
+image_test$label <- test$label
 ```
 
 ## Among 0-9, find which digits are easier to predict than others.
@@ -76,6 +94,22 @@ train %>%
 + 6 and 7 are easy to predict as well from the simplicity of the digits.
 + 8,5,9,2,3,4 are harder to predict given they are more complicated to write and machine may misinterpret them as something else.
 
+
+View the images that have the label HARD.
+
+```{r}
+hard_image <- image_train %>% filter(label=="HARD")
+```
+
+```{r}
+show_digit(hard_image[2,1:784])
+show_digit(hard_image[3,1:784])
+show_digit(hard_image[4,1:784])
+show_digit(hard_image[5,1:784])
+show_digit(hard_image[6,1:784])
+show_digit(hard_image[7,1:784])
+```
+
 ## Binary Classifier using logistic regression and random forest
 
 ### First step: change EASY and HARD label into binary. EASY -> 0, HARD -> 1.
@@ -87,12 +121,19 @@ test$bi_label <- 0
 test[which(test$label=="HARD"),"bi_label"] <- 1
 ```
 
+```{r}
+image_train$bi_label <- 0
+image_train[which(image_train$label=="HARD"),"bi_label"] <- 1
+image_test$bi_label <- 0
+image_test[which(image_test$label=="HARD"),"bi_label"] <- 1
+```
+
 ### Second step: seperating training and validation set for cross-validation.
 
 ```{r}
 train_index <- sample(1:60000,50000)
-train_sample <- train[train_index,]
-validation <- train[-train_index,]
+train_sample <- image_train[train_index,]
+validation <- image_train[-train_index,]
 ```
 
 ```{r}
@@ -106,7 +147,21 @@ accuracy <- mean(pred==validation$bi_label)
 accuracy
 ```
 
-When set the threshold to 0.4, accuracy is around 97% for the validation set.
+```{r}
+#Logistic regression
+lr.fit <- glm(bi_label~.,data=train_sample[,c(1:784,787)])
+```
+
+```{r}
+pred <- predict(lr.fit,validation[,1:784],type="response")
+pred <- ifelse(pred>0.5,1,0)
+conf <- table(validation$bi_label,pred)
+conf
+accuracy <- mean(pred==validation$bi_label)
+accuracy
+```
+
+When set the threshold to 0.5, accuracy is around 74.32% for the validation set.
 
 ```{r}
 #Random forest
@@ -114,8 +169,11 @@ library(randomForest)
 ```
 
 ```{r}
-rf.fit <- randomForest(as.factor(bi_label)~.,data=train_sample[,c(3:23,26)],importance=TRUE)
-pred <- predict(rf.fit,validation[,3:23])
+rf.fit <- randomForest(as.factor(bi_label)~.,data=train_sample[,c(1:784,787)],importance=TRUE)
+```
+
+```{r}
+pred <- predict(rf.fit,validation[,1:784])
 conf <- table(validation$bi_label,pred)
 conf
 accuracy <- mean(pred==validation$bi_label)
@@ -125,14 +183,14 @@ accuracy
 ### Third step: calculating training and test accuracy using trained models
 
 ```{r}
-#Logistic regression - training
-
-
+#Logistic regression
+lr.fit <- glm(bi_label~.,data=image_train[,c(1:784,787)])
 ```
 
 ```{r}
-#Random forest - training
-pred <- predict(rf.fit,train[,3:23])
+#Logistic regression - training
+pred <- predict(lr.fit,image_train[,1:784],type="response")
+pred <- ifelse(pred>0.5,1,0)
 conf <- table(train$bi_label,pred)
 conf
 accuracy <- mean(pred==train$bi_label)
@@ -140,13 +198,340 @@ accuracy
 ```
 
 ```{r}
-#Random forest - test
-pred <- predict(rf.fit,test[,3:23])
+#Logistic regression - test
+pred <- predict(lr.fit,image_test[,1:784],type="response")
+pred <- ifelse(pred>0.5,1,0)
 conf <- table(test$bi_label,pred)
 conf
 accuracy <- mean(pred==test$bi_label)
 accuracy
 ```
+
+```{r}
+rf.fit <- randomForest(as.factor(bi_label)~.,data=image_train[,c(1:784,787)],importance=TRUE)
+```
+
+```{r}
+#Random forest - training
+pred <- predict(rf.fit,image_train[,1:784])
+conf <- table(image_train$bi_label,pred)
+conf
+accuracy <- mean(pred==image_train$bi_label)
+accuracy
+```
+
+```{r}
+#Random forest - test
+pred <- predict(rf.fit,image_test[,1:784])
+conf <- table(test$bi_label,pred)
+conf
+accuracy <- mean(pred==test$bi_label)
+accuracy
+```
+
+Check out the important variables in random forest model.
+
+```{r}
+varImpPlot(rf.fit)
+```
+
+##  Seperate the dataset per digit to predict if it's EASY or HARD to be recognized for every digit
+
+```{r}
+sep <- function(data,num) {
+  data$Label <- as.integer(data$Label)
+  library(dplyr)
+  data_new <- data %>% filter(Label==num)
+  return(data_new)
+}
+```
+
+```{r}
+train_0 <- sep(train,0)
+test_0 <- sep(test,0)
+train_1 <- sep(train,1)
+test_1 <- sep(test,1)
+train_2 <- sep(train,2)
+test_2 <- sep(test,2)
+train_3 <- sep(train,3)
+test_3 <- sep(test,3)
+train_4 <- sep(train,4)
+test_4 <- sep(test,4)
+train_5 <- sep(train,5)
+test_5 <- sep(test,5)
+train_6 <- sep(train,6)
+test_6 <- sep(test,6)
+train_7 <- sep(train,7)
+test_7 <- sep(test,7)
+train_8 <- sep(train,8)
+test_8 <- sep(test,8)
+train_9 <- sep(train,9)
+test_9 <- sep(test,9)
+```
+
+### Digit 0
+
+```{r}
+rf.fit.0 <- randomForest(as.factor(bi_label)~.,data=train_0[,c(3:23,26)],importance=TRUE)
+```
+
+```{r}
+#training accuracy
+pred <- predict(rf.fit.0,train_0[,3:23])
+conf <- table(train_0$bi_label,pred)
+conf
+accuracy <- mean(pred==train_0$bi_label)
+accuracy
+```
+
+```{r}
+#test accuracy
+pred <- predict(rf.fit.0,test_0[,3:23])
+conf <- table(test_0$bi_label,pred)
+conf
+accuracy <- mean(pred==test_0$bi_label)
+accuracy
+```
+
+### Digit 1
+
+```{r}
+rf.fit.1 <- randomForest(as.factor(bi_label)~.,data=train_1[,c(3:23,26)],importance=TRUE)
+```
+
+```{r}
+#training accuracy
+pred <- predict(rf.fit.1,train_1[,3:23])
+conf <- table(train_1$bi_label,pred)
+conf
+accuracy <- mean(pred==train_1$bi_label)
+accuracy
+```
+
+```{r}
+#test accuracy
+pred <- predict(rf.fit.1,test_1[,3:23])
+conf <- table(test_1$bi_label,pred)
+conf
+accuracy <- mean(pred==test_1$bi_label)
+accuracy
+```
+
+### Digit 2
+
+```{r}
+rf.fit.2 <- randomForest(as.factor(bi_label)~.,data=train_2[,c(3:23,26)],importance=TRUE)
+```
+
+```{r}
+#training accuracy
+pred <- predict(rf.fit.2,train_2[,3:23])
+conf <- table(train_2$bi_label,pred)
+conf
+accuracy <- mean(pred==train_2$bi_label)
+accuracy
+```
+
+```{r}
+#test accuracy
+pred <- predict(rf.fit.2,test_2[,3:23])
+conf <- table(test_2$bi_label,pred)
+conf
+accuracy <- mean(pred==test_2$bi_label)
+accuracy
+```
+
+### Digit 3
+
+```{r}
+rf.fit.3 <- randomForest(as.factor(bi_label)~.,data=train_3[,c(3:23,26)],importance=TRUE)
+```
+
+```{r}
+#training accuracy
+pred <- predict(rf.fit.3,train_3[,3:23])
+conf <- table(train_3$bi_label,pred)
+conf
+accuracy <- mean(pred==train_3$bi_label)
+accuracy
+```
+
+```{r}
+#test accuracy
+pred <- predict(rf.fit.3,test_3[,3:23])
+conf <- table(test_3$bi_label,pred)
+conf
+accuracy <- mean(pred==test_3$bi_label)
+accuracy
+```
+
+### Digit 4
+
+```{r}
+rf.fit.4 <- randomForest(as.factor(bi_label)~.,data=train_4[,c(3:23,26)],importance=TRUE)
+```
+
+```{r}
+#training accuracy
+pred <- predict(rf.fit.4,train_4[,3:23])
+conf <- table(train_4$bi_label,pred)
+conf
+accuracy <- mean(pred==train_4$bi_label)
+accuracy
+```
+
+```{r}
+#test accuracy
+pred <- predict(rf.fit.4,test_4[,3:23])
+conf <- table(test_4$bi_label,pred)
+conf
+accuracy <- mean(pred==test_4$bi_label)
+accuracy
+```
+
+### Digit 5
+
+```{r}
+rf.fit.5 <- randomForest(as.factor(bi_label)~.,data=train_5[,c(3:23,26)],importance=TRUE)
+```
+
+```{r}
+#training accuracy
+pred <- predict(rf.fit.5,train_5[,3:23])
+conf <- table(train_5$bi_label,pred)
+conf
+accuracy <- mean(pred==train_5$bi_label)
+accuracy
+```
+
+```{r}
+#test accuracy
+pred <- predict(rf.fit.5,test_5[,3:23])
+conf <- table(test_5$bi_label,pred)
+conf
+accuracy <- mean(pred==test_5$bi_label)
+accuracy
+```
+
+### Digit 6
+
+```{r}
+rf.fit.6 <- randomForest(as.factor(bi_label)~.,data=train_6[,c(3:23,26)],importance=TRUE)
+```
+
+```{r}
+#training accuracy
+pred <- predict(rf.fit.6,train_6[,3:23])
+conf <- table(train_6$bi_label,pred)
+conf
+accuracy <- mean(pred==train_6$bi_label)
+accuracy
+```
+
+```{r}
+#test accuracy
+pred <- predict(rf.fit.6,test_6[,3:23])
+conf <- table(test_6$bi_label,pred)
+conf
+accuracy <- mean(pred==test_6$bi_label)
+accuracy
+```
+
+### Digit 7
+
+```{r}
+rf.fit.7 <- randomForest(as.factor(bi_label)~.,data=train_7[,c(3:23,26)],importance=TRUE)
+```
+
+```{r}
+#training accuracy
+pred <- predict(rf.fit.7,train_7[,3:23])
+conf <- table(train_7$bi_label,pred)
+conf
+accuracy <- mean(pred==train_7$bi_label)
+accuracy
+```
+
+```{r}
+#test accuracy
+pred <- predict(rf.fit.7,test_7[,3:23])
+conf <- table(test_7$bi_label,pred)
+conf
+accuracy <- mean(pred==test_7$bi_label)
+accuracy
+```
+
+### Digit 8
+
+```{r}
+rf.fit.8 <- randomForest(as.factor(bi_label)~.,data=train_8[,c(3:23,26)],importance=TRUE)
+```
+
+```{r}
+#training accuracy
+pred <- predict(rf.fit.8,train_8[,3:23])
+conf <- table(train_8$bi_label,pred)
+conf
+accuracy <- mean(pred==train_8$bi_label)
+accuracy
+```
+
+```{r}
+#test accuracy
+pred <- predict(rf.fit.8,test_8[,3:23])
+conf <- table(test_8$bi_label,pred)
+conf
+accuracy <- mean(pred==test_8$bi_label)
+accuracy
+```
+
+### Digit 9
+
+```{r}
+rf.fit.9 <- randomForest(as.factor(bi_label)~.,data=train_9[,c(3:23,26)],importance=TRUE)
+```
+
+```{r}
+#training accuracy
+pred <- predict(rf.fit.9,train_9[,3:23])
+conf <- table(train_9$bi_label,pred)
+conf
+accuracy <- mean(pred==train_9$bi_label)
+accuracy
+```
+
+```{r}
+#test accuracy
+pred <- predict(rf.fit.9,test_9[,3:23])
+conf <- table(test_9$bi_label,pred)
+conf
+accuracy <- mean(pred==test_9$bi_label)
+accuracy
+```
+
+I stored these accuracy results for each digit into a excel file for visualization.
+
+### Visualization
+
+```{r}
+library(xlsx)
+```
+
+```{r}
+digit_accuracy <- read.xlsx2("digit_accuracy.xlsx",sheetIndex=1,colClasses = c("numeric","numeric","character"))
+```
+
+```{r}
+digit_accuracy$Digit <- as.character(digit_accuracy$Digit)
+
+digit_accuracy %>%
+  ggplot(aes(x=Digit,y=Accuracy,fill=Category)) +
+  geom_bar(stat="identity",position=position_dodge()) +
+  geom_text(aes(label=round(Accuracy,4)), vjust=-0.3, color="black", position=position_dodge(0.9),size=3) +
+  coord_flip(ylim = c(0.9,1))
+
+```
+
 
 
 
