@@ -12,7 +12,7 @@ The goal is to design a binary classifier for these handwriting digits so that w
 
 ## Load in data
 
-csv file and ubyte data downloaded online.
+csv file of 21 ML algorithm recognition results and MINST data in ubyte form downloaded from online.
 
 ## Calculate prediction accuracy and labeling EASY and HARD
 
