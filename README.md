@@ -46,7 +46,7 @@ Prediction results:
 
 ![](https://github.com/chunziwang/divhacks-IBM-challenge-chunziwang/blob/master/figs/accuracy_result.png)
 
-I found that random forest has a higher prediction accuracy on test data but it takes a long time to train the model. Logistic regression model is much faster to train but the accuracy result is not as well.
+I found that random forest has a higher prediction accuracy on test data but it takes a long time to train the model. Logistic regression model is much faster to train but the accuracy is lower.
 
 By observing the confusion matrix of two models' prediction on test set, I found that the difference in accuracy mainly results from logistic regression's failure to predict HARD as HARD. Logistic Regression only accurately predicted 11.93% of HARD images as HARD and the number for Random Forest accurately is 38.09%. Turns out images labeled as EASY are much easier to classify then the ones labeled as HARD. I'll look at this finding more in detail. 
 
