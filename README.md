@@ -52,11 +52,11 @@ By observing the confusion matrix of two models' prediction on test set, I found
 
 Random Forest test data confusion matrix:
 
-![](https://github.com/chunziwang/divhacks-IBM-challenge-chunziwang/blob/master/figs/accuracy_result.png)
+![](https://github.com/chunziwang/divhacks-IBM-challenge-chunziwang/blob/master/figs/rf.png)
 
 Logistic Regression test data confusion matrix:
 
-![](https://github.com/chunziwang/divhacks-IBM-challenge-chunziwang/blob/master/figs/accuracy_result.png)
+![](https://github.com/chunziwang/divhacks-IBM-challenge-chunziwang/blob/master/figs/lr.png)
 
 
 
